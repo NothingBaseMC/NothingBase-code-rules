@@ -1,0 +1,700 @@
+## Main.java 標準寫法
+
+### 1. 核心插件 Main.java（NothingSidebar）
+
+```java
+package com.Studio.GrayCat.Plugin;
+
+import com.Studio.GrayCat.Plugin.api.PermissionAPI;
+import com.Studio.GrayCat.Plugin.api.DynamicAPIHub;
+import com.Studio.GrayCat.Plugin.sidebar.commands.SidebarTabCommand;
+import com.Studio.GrayCat.Plugin.sidebar.managers.ConfigManager;
+import com.Studio.GrayCat.Plugin.sidebar.listeners.PlayerListener;
+import org.bukkit.plugin.java.JavaPlugin;
+
+/**
+ * NothingSidebar 主類 - 側邊欄和Tab列表功能，整合Nothing系列插件
+ * 
+ * @author GrayCat Studio
+ * @version 1.0.0
+ */
+public class Main extends JavaPlugin {
+
+    // 單例實例
+    private static Main instance;
+    
+    // 管理器
+    private ConfigManager configManager;
+    private ScoreboardManager scoreboardManager;
+    private TabManager tabManager;
+    
+    // API
+    private PermissionAPI permissionAPI;
+
+    @Override
+    public void onEnable() {
+        instance = this;
+        
+        getLogger().info("§a正在啟動 NothingSidebar...");
+        
+        // 初始化配置
+        initializeConfig();
+        
+        // 初始化 API
+        initializeAPI();
+        
+        // 初始化動態 API 中樞
+        DynamicAPIHub.initialize(this);
+        
+        // 初始化管理器
+        initializeManagers();
+        
+        // 註冊指令和監聽器
+        registerCommandsAndListeners();
+        
+        // 延遲初始化其他插件整合
+        getServer().getScheduler().runTaskLater(this, () -> {
+            DynamicAPIHub.refreshAllAPIs();
+            initializeUnifiedIntegration();
+            getLogger().info("§a✓ NothingSidebar 啟動完成！");
+        }, 20L);
+    }
+
+    @Override
+    public void onDisable() {
+        getLogger().info("§e正在關閉 NothingSidebar...");
+        
+        // 清理資源
+        if (scoreboardManager != null) {
+            scoreboardManager.cleanUp();
+        }
+        
+        // 清理 API 中樞
+        DynamicAPIHub.cleanup();
+        
+        getLogger().info("§a✓ NothingSidebar 已安全關閉");
+        instance = null;
+    }
+    
+    /**
+     * 初始化配置
+     */
+    private void initializeConfig() {
+        configManager = new ConfigManager(this);
+        getLogger().info("§a✓ 配置初始化完成");
+    }
+    
+    /**
+     * 初始化 API
+     */
+    private void initializeAPI() {
+        permissionAPI = new PermissionAPI(this);
+        getLogger().info("§a✓ API 初始化完成");
+    }
+    
+    /**
+     * 初始化管理器
+     */
+    private void initializeManagers() {
+        // 按依賴順序初始化
+        scoreboardManager = new ScoreboardManager(this);
+        tabManager = new TabManager(this);
+        getLogger().info("§a✓ 管理器初始化完成");
+    }
+    
+    /**
+     * 註冊指令和監聽器
+     */
+    private void registerCommandsAndListeners() {
+        // 註冊指令
+        getCommand("nothingsidebar").setExecutor(new SidebarTabCommand(this));
+        
+        // 註冊監聽器
+        getServer().getPluginManager().registerEvents(new PlayerListener(this), this);
+        
+        getLogger().info("§a✓ 指令和監聽器註冊完成");
+    }
+    
+    // Getter 方法
+    public static Main getInstance() { return instance; }
+    public ConfigManager getConfigManager() { return configManager; }
+    public PermissionAPI getPermissionAPI() { return permissionAPI; }
+    public PermissionAPI getAPI() { return permissionAPI; }
+}
+```
+
+### 2. 一般插件 Main.java（以 NothingEconomy 為例）
+
+```java
+package com.Studio.GrayCat.Plugin.nothingeconomy;
+
+import com.Studio.GrayCat.Plugin.nothingeconomy.api.EconomyAPI;
+import com.Studio.GrayCat.Plugin.nothingeconomy.managers.ConfigManager;
+import com.Studio.GrayCat.Plugin.nothingeconomy.managers.EconomyManager;
+import com.Studio.GrayCat.Plugin.nothingeconomy.commands.MoneyCommand;
+import org.bukkit.plugin.java.JavaPlugin;
+
+/**
+ * NothingEconomy 插件主類
+ * 
+ * @author GrayCat Studio
+ * @version 1.0.1
+ */
+public class Main extends JavaPlugin {
+    
+    // 單例實例
+    private static Main instance;
+    
+    // 管理器
+    private ConfigManager configManager;
+    private EconomyManager economyManager;
+    
+    // API
+    private EconomyAPI economyAPI;
+
+    @Override
+    public void onEnable() {
+        instance = this;
+        
+        getLogger().info("§e正在啟動 NothingEconomy...");
+        
+        try {
+            // 初始化配置
+            initializeConfig();
+            
+            // 初始化管理器
+            initializeManagers();
+            
+            // 初始化 API（必須在註冊指令前）
+            initializeAPI();
+            
+            // 註冊指令和監聽器
+            registerCommandsAndListeners();
+            
+            getLogger().info("§a✓ NothingEconomy 啟動成功！");
+            
+        } catch (Exception e) {
+            getLogger().severe("§c✗ NothingEconomy 啟動失敗：" + e.getMessage());
+            getServer().getPluginManager().disablePlugin(this);
+        }
+    }
+
+    @Override
+    public void onDisable() {
+        getLogger().info("§e正在關閉 NothingEconomy...");
+        
+        // 保存資料
+        if (economyManager != null) {
+            economyManager.saveAllData();
+        }
+        
+        getLogger().info("§a✓ NothingEconomy 已安全關閉");
+        instance = null;
+    }
+    
+    // 初始化方法
+    private void initializeConfig() {
+        configManager = new ConfigManager(this);
+    }
+    
+    private void initializeManagers() {
+        economyManager = new EconomyManager(this);
+    }
+    
+    private void initializeAPI() {
+        economyAPI = new EconomyAPI(this);
+    }
+    
+    private void registerCommandsAndListeners() {
+        getCommand("money").setExecutor(new MoneyCommand(this));
+        getServer().getPluginManager().registerEvents(new PlayerListener(this), this);
+    }
+    
+    // Getter 方法
+    public static Main getInstance() { return instance; }
+    public EconomyAPI getAPI() { return economyAPI; }
+    public EconomyAPI getEconomyAPI() { return economyAPI; }
+    public static EconomyAPI getEconomyAPI() { 
+        return getInstance() != null ? getInstance().getAPI() : null; 
+    }
+}
+```
+
+## Manager 類別標準寫法
+
+### 1. ConfigManager 標準寫法
+
+```java
+package com.Studio.GrayCat.Plugin.nothingeconomy.managers;
+
+import org.bukkit.configuration.file.FileConfiguration;
+import org.bukkit.configuration.file.YamlConfiguration;
+import org.bukkit.plugin.java.JavaPlugin;
+
+/**
+ * 配置管理器
+ * 
+ * @author GrayCat Studio
+ */
+public class ConfigManager {
+    
+    private final JavaPlugin plugin;
+    private File configFile;
+    private FileConfiguration config;
+    
+    public ConfigManager(JavaPlugin plugin) {
+        this.plugin = plugin;
+        loadConfig();
+    }
+    
+    /**
+     * 載入配置文件
+     */
+    public void loadConfig() {
+        configFile = new File(plugin.getDataFolder(), "config.yml");
+        
+        if (!configFile.exists()) {
+            plugin.saveResource("config.yml", false);
+        }
+        
+        config = YamlConfiguration.loadConfiguration(configFile);
+    }
+    
+    /**
+     * 重新載入配置
+     */
+    public void reloadConfig() {
+        config = YamlConfiguration.loadConfiguration(configFile);
+    }
+    
+    /**
+     * 儲存配置
+     */
+    public void saveConfig() {
+        try {
+            config.save(configFile);
+        } catch (IOException e) {
+            plugin.getLogger().severe("無法儲存配置文件: " + e.getMessage());
+        }
+    }
+    
+    /**
+     * 獲取配置
+     */
+    public FileConfiguration getConfig() {
+        return config;
+    }
+    
+    // 配置項獲取方法
+    public double getDefaultBalance() {
+        return config.getDouble("economy.default-balance", 1000.0);
+    }
+    
+    public boolean isDebugEnabled() {
+        return config.getBoolean("settings.debug", false);
+    }
+}
+```
+
+### 2. 功能 Manager 標準寫法
+
+```java
+package com.Studio.GrayCat.Plugin.nothingeconomy.managers;
+
+import com.Studio.GrayCat.Plugin.nothingeconomy.Main;
+import org.bukkit.entity.Player;
+import java.util.UUID;
+import java.util.concurrent.ConcurrentHashMap;
+
+/**
+ * 經濟管理器
+ * 
+ * @author GrayCat Studio
+ */
+public class EconomyManager {
+    
+    private final Main plugin;
+    private final Map<UUID, Double> balanceCache = new ConcurrentHashMap<>();
+    
+    public EconomyManager(Main plugin) {
+        this.plugin = plugin;
+        loadAllData();
+    }
+    
+    /**
+     * 獲取玩家餘額
+     */
+    public double getBalance(UUID playerId) {
+        return balanceCache.getOrDefault(playerId, 
+            plugin.getConfigManager().getDefaultBalance());
+    }
+    
+    /**
+     * 設定玩家餘額
+     */
+    public boolean setBalance(UUID playerId, double amount) {
+        if (amount < 0) return false;
+        
+        balanceCache.put(playerId, amount);
+        savePlayerData(playerId);
+        return true;
+    }
+    
+    /**
+     * 增加餘額
+     */
+    public boolean addBalance(UUID playerId, double amount) {
+        if (amount <= 0) return false;
+        
+        double currentBalance = getBalance(playerId);
+        return setBalance(playerId, currentBalance + amount);
+    }
+    
+    /**
+     * 扣除餘額
+     */
+    public boolean subtractBalance(UUID playerId, double amount) {
+        if (amount <= 0) return false;
+        
+        double currentBalance = getBalance(playerId);
+        if (currentBalance < amount) return false;
+        
+        return setBalance(playerId, currentBalance - amount);
+    }
+    
+    /**
+     * 載入所有資料
+     */
+    private void loadAllData() {
+        // 實作資料載入邏輯
+    }
+    
+    /**
+     * 儲存玩家資料
+     */
+    private void savePlayerData(UUID playerId) {
+        // 實作資料儲存邏輯
+    }
+    
+    /**
+     * 儲存所有資料
+     */
+    public void saveAllData() {
+        // 實作資料儲存邏輯
+    }
+}
+```
+
+## Listener 類別標準寫法
+
+### PlayerListener 標準寫法
+
+```java
+package com.Studio.GrayCat.Plugin.nothingeconomy.listeners;
+
+import com.Studio.GrayCat.Plugin.nothingeconomy.Main;
+import org.bukkit.entity.Player;
+import org.bukkit.event.EventHandler;
+import org.bukkit.event.EventPriority;
+import org.bukkit.event.Listener;
+import org.bukkit.event.player.PlayerJoinEvent;
+import org.bukkit.event.player.PlayerQuitEvent;
+
+/**
+ * 玩家事件監聽器
+ * 
+ * @author GrayCat Studio
+ */
+public class PlayerListener implements Listener {
+    
+    private final Main plugin;
+    
+    public PlayerListener(Main plugin) {
+        this.plugin = plugin;
+    }
+    
+    /**
+     * 玩家加入事件
+     */
+    @EventHandler(priority = EventPriority.MONITOR)
+    public void onPlayerJoin(PlayerJoinEvent event) {
+        Player player = event.getPlayer();
+        
+        try {
+            // 初始化玩家資料
+            plugin.getEconomyManager().initializePlayer(player.getUniqueId());
+            
+            plugin.getLogger().info("玩家 " + player.getName() + " 加入，經濟系統已初始化");
+            
+        } catch (Exception e) {
+            plugin.getLogger().warning("初始化玩家 " + player.getName() + " 時發生錯誤: " + e.getMessage());
+        }
+    }
+    
+    /**
+     * 玩家離開事件
+     */
+    @EventHandler(priority = EventPriority.MONITOR)
+    public void onPlayerQuit(PlayerQuitEvent event) {
+        Player player = event.getPlayer();
+        
+        try {
+            // 儲存玩家資料
+            plugin.getEconomyManager().savePlayerData(player.getUniqueId());
+            
+            plugin.getLogger().info("玩家 " + player.getName() + " 離開，資料已儲存");
+            
+        } catch (Exception e) {
+            plugin.getLogger().warning("儲存玩家 " + player.getName() + " 資料時發生錯誤: " + e.getMessage());
+        }
+    }
+}
+```
+
+## Command 類別標準寫法
+
+### Command 標準寫法
+
+```java
+package com.Studio.GrayCat.Plugin.nothingeconomy.commands;
+
+import com.Studio.GrayCat.Plugin.nothingeconomy.Main;
+import org.bukkit.command.Command;
+import org.bukkit.command.CommandExecutor;
+import org.bukkit.command.CommandSender;
+import org.bukkit.command.TabCompleter;
+import org.bukkit.entity.Player;
+
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+
+/**
+ * 金錢指令處理器
+ * 
+ * @author GrayCat Studio
+ */
+public class MoneyCommand implements CommandExecutor, TabCompleter {
+    
+    private final Main plugin;
+    
+    public MoneyCommand(Main plugin) {
+        this.plugin = plugin;
+    }
+    
+    @Override
+    public boolean onCommand(CommandSender sender, Command command, String label, String[] args) {
+        if (args.length == 0) {
+            return handleBalance(sender);
+        }
+        
+        switch (args[0].toLowerCase()) {
+            case "pay":
+                return handlePay(sender, args);
+            case "give":
+                return handleGive(sender, args);
+            case "take":
+                return handleTake(sender, args);
+            case "set":
+                return handleSet(sender, args);
+            case "top":
+                return handleTop(sender, args);
+            case "reload":
+                return handleReload(sender);
+            default:
+                return handleBalance(sender);
+        }
+    }
+    
+    /**
+     * 處理查看餘額
+     */
+    private boolean handleBalance(CommandSender sender) {
+        if (!(sender instanceof Player)) {
+            sender.sendMessage("§c此指令只能由玩家執行！");
+            return true;
+        }
+        
+        Player player = (Player) sender;
+        double balance = plugin.getEconomyManager().getBalance(player.getUniqueId());
+        
+        sender.sendMessage("§6您的餘額：§e" + String.format("%.2f", balance));
+        return true;
+    }
+    
+    /**
+     * 處理轉帳
+     */
+    private boolean handlePay(CommandSender sender, String[] args) {
+        if (!(sender instanceof Player)) {
+            sender.sendMessage("§c此指令只能由玩家執行！");
+            return true;
+        }
+        
+        if (args.length < 3) {
+            sender.sendMessage("§c用法: /money pay <玩家> <金額>");
+            return true;
+        }
+        
+        Player player = (Player) sender;
+        Player target = getServer().getPlayer(args[1]);
+        
+        if (target == null) {
+            sender.sendMessage("§c找不到玩家：" + args[1]);
+            return true;
+        }
+        
+        try {
+            double amount = Double.parseDouble(args[2]);
+            
+            if (amount <= 0) {
+                sender.sendMessage("§c金額必須大於 0！");
+                return true;
+            }
+            
+            if (plugin.getEconomyManager().transfer(player.getUniqueId(), target.getUniqueId(), amount)) {
+                sender.sendMessage("§a成功轉帳 §e" + amount + " §a給 " + target.getName());
+                target.sendMessage("§a收到來自 " + player.getName() + " 的轉帳：§e" + amount);
+            } else {
+                sender.sendMessage("§c轉帳失敗！餘額不足或發生錯誤。");
+            }
+            
+        } catch (NumberFormatException e) {
+            sender.sendMessage("§c無效的金額格式！");
+        }
+        
+        return true;
+    }
+    
+    @Override
+    public List<String> onTabComplete(CommandSender sender, Command command, String alias, String[] args) {
+        List<String> completions = new ArrayList<>();
+        
+        if (args.length == 1) {
+            completions.addAll(Arrays.asList("pay", "give", "take", "set", "top", "reload"));
+        } else if (args.length == 2 && args[0].equalsIgnoreCase("pay")) {
+            // 返回在線玩家列表
+            for (Player player : getServer().getOnlinePlayers()) {
+                completions.add(player.getName());
+            }
+        }
+        
+        return completions;
+    }
+}
+```
+
+## API 類別標準寫法
+
+### API 標準寫法
+
+```java
+package com.Studio.GrayCat.Plugin.nothingeconomy.api;
+
+import com.Studio.GrayCat.Plugin.nothingeconomy.Main;
+import org.bukkit.entity.Player;
+import java.util.UUID;
+
+/**
+ * NothingEconomy API - 經濟系統對外接口
+ * 
+ * @author GrayCat Studio
+ * @version 1.0.1
+ */
+public class EconomyAPI {
+    
+    private final Main plugin;
+    private static EconomyAPI instance;
+    
+    public EconomyAPI(Main plugin) {
+        this.plugin = plugin;
+        instance = this;
+    }
+    
+    /**
+     * 獲取 API 實例（DynamicAPIHub 發現方法）
+     */
+    public static EconomyAPI get() {
+        return instance;
+    }
+    
+    // ======== 基本經濟操作 ========
+    
+    /**
+     * 獲取玩家餘額
+     */
+    public double getBalance(UUID playerId) {
+        return plugin.getEconomyManager().getBalance(playerId);
+    }
+    
+    /**
+     * 設定玩家餘額
+     */
+    public boolean setBalance(UUID playerId, double amount) {
+        return plugin.getEconomyManager().setBalance(playerId, amount);
+    }
+    
+    /**
+     * 增加玩家餘額
+     */
+    public boolean addBalance(UUID playerId, double amount) {
+        return plugin.getEconomyManager().addBalance(playerId, amount);
+    }
+    
+    /**
+     * 扣除玩家餘額
+     */
+    public boolean subtractBalance(UUID playerId, double amount) {
+        return plugin.getEconomyManager().subtractBalance(playerId, amount);
+    }
+    
+    /**
+     * 轉帳
+     */
+    public boolean transfer(UUID fromPlayer, UUID toPlayer, double amount) {
+        return plugin.getEconomyManager().transfer(fromPlayer, toPlayer, amount);
+    }
+    
+    // ======== 便利方法 ========
+    
+    /**
+     * 檢查玩家是否有足夠餘額
+     */
+    public boolean hasBalance(UUID playerId, double amount) {
+        return getBalance(playerId) >= amount;
+    }
+    
+    /**
+     * 格式化金額顯示
+     */
+    public String formatBalance(double amount) {
+        return String.format("%.2f", amount);
+    }
+    
+    // ======== 系統方法 ========
+    
+    /**
+     * 檢查 API 是否可用
+     */
+    public boolean isAvailable() {
+        return plugin != null && plugin.isEnabled();
+    }
+    
+    /**
+     * 獲取插件版本
+     */
+    public String getVersion() {
+        return plugin.getDescription().getVersion();
+    }
+}
+```
+
+---
+
+> **最佳實踐**
+>
+> 1. 所有類別都應該有完整的 JavaDoc 註解
+> 2. 使用繁體中文撰寫註解和日誌訊息
+> 3. 實作適當的錯誤處理機制
+> 4. 遵循單一職責原則，每個類別只負責一個功能
+> 5. 使用依賴注入模式，通過建構函數傳遞依賴 
