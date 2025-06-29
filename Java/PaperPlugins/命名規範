@@ -1,0 +1,262 @@
+## 標準資料夾結構
+
+### 根目錄結構
+
+```
+NothingXXX/                          # 插件根目錄
+├── log/                             # 變更記錄目錄
+│   ├── YYYY-MM-DD-變更描述.md       # 變更記錄檔案
+│   └── ...
+├── pom.xml                          # Maven 配置檔案
+├── src/                             # 原始碼目錄
+│   ├── main/                        # 主要程式碼
+│   │   ├── java/                    # Java 原始碼
+│   │   └── resources/               # 資源檔案
+│   └── test/                        # 測試程式碼
+│       └── java/
+├── target/                          # 編譯輸出目錄
+├── README.md                        # 專案說明（選用）
+└── [插件名].iml                     # IntelliJ 專案檔案
+```
+
+### Java 原始碼結構
+
+```
+src/main/java/com/Studio/GrayCat/Plugin/nothingxxx/
+├── Main.java                        # 插件主類別
+├── api/                             # API 介面目錄
+│   ├── [插件名]API.java             # 主要 API 類別
+│   ├── [插件名]APIImpl.java         # API 實作類別（選用）
+│   └── [插件名]APIExample.java      # API 使用範例（選用）
+├── commands/                        # 指令處理器目錄
+│   ├── [功能]Command.java           # 指令處理器
+│   └── ...
+├── listeners/                       # 事件監聽器目錄
+│   ├── PlayerListener.java          # 玩家事件監聽器
+│   ├── [功能]Listener.java          # 功能特定監聽器
+│   └── ...
+├── managers/                        # 管理器目錄
+│   ├── ConfigManager.java           # 配置管理器
+│   ├── DataManager.java             # 資料管理器
+│   ├── [功能]Manager.java           # 功能管理器
+│   └── ...
+├── models/                          # 資料模型目錄
+│   ├── [功能]Model.java             # 資料模型類別
+│   └── ...
+├── guis/(可選)                       # GUI 介面目錄
+│   ├── [功能]GUI.java               # GUI 類別
+│   └── ...
+├── utils/(可選)                      # 工具類別目錄
+│   ├── [功能]Utils.java             # 工具類別
+│   └── ...
+└── tasks/(可選)                      # 任務排程目錄
+    ├── [功能]Task.java              # 排程任務
+    └── ...
+```
+
+### 資源檔案結構
+
+```
+src/main/resources/
+├── plugin.yml                       # 插件配置檔案（必需）
+├── config.yml                       # 主配置檔案
+├── messages.yml                     # 訊息配置檔案
+├── data/                            # 預設資料目錄（選用）
+│   ├── defaults.yml
+│   └── ...
+└── lang/                            # 多語言支援（選用）
+    ├── zh_TW.yml                    # 繁體中文
+    └── ...
+```
+
+## 命名規範
+
+### 1. 插件命名
+
+| 類型 | 格式 | 範例 |
+|------|------|------|
+| 插件名稱 | `Nothing[功能名]` | `NothingEconomy`, `NothingPerms` |
+| 包名 | `com.Studio.GrayCat.Plugin.nothing[小寫功能名]` | `com.Studio.GrayCat.Plugin.nothingeconomy` |
+| 主類別 | `Main` | `Main.java` |
+
+### 2. 類別命名
+
+| 類型 | 格式 | 範例 |
+|------|------|------|
+| API 類別 | `[功能名]API` | `EconomyAPI.java` |
+| 管理器 | `[功能名]Manager` | `EconomyManager.java`, `ConfigManager.java` |
+| 監聽器 | `[功能名]Listener` | `PlayerListener.java`, `ChatListener.java` |
+| 指令處理器 | `[功能名]Command` | `MoneyCommand.java`, `EconomyCommand.java` |
+| 資料模型 | `[實體名]Model` 或 `[實體名]` | `PlayerDataModel.java`, `Transaction.java` |
+| GUI 類別 | `[功能名]GUI` | `ShopGUI.java`, `InventoryGUI.java` |
+| 工具類別 | `[功能名]Utils` | `ColorUtils.java`, `MessageUtils.java` |
+| 任務類別 | `[功能名]Task` | `UpdateTask.java`, `SaveTask.java` |
+
+### 3. 方法命名
+
+| 類型 | 格式 | 範例 |
+|------|------|------|
+| 獲取方法 | `get[屬性名]()` | `getBalance()`, `getPlayerName()` |
+| 設定方法 | `set[屬性名]()` | `setBalance()`, `setPlayerGroup()` |
+| 檢查方法 | `is[條件]()` 或 `has[條件]()` | `isEnabled()`, `hasPermission()` |
+| 動作方法 | 動詞開頭 | `createCommission()`, `deleteStorage()` |
+
+### 4. 變數命名
+
+| 類型 | 格式 | 範例 |
+|------|------|------|
+| 實例變數 | 駝峰式命名 | `economyManager`, `playerData` |
+| 常數 | 全大寫+底線 | `DEFAULT_BALANCE`, `MAX_STORAGE_SIZE` |
+| 集合類型 | 駝峰是命名+後面是類型 | `playerList`, `commissionMap` |
+
+## 配置檔案規範
+
+### plugin.yml 標準格式
+
+```yaml
+name: NothingXXX
+version: ${project.version}
+main: com.Studio.GrayCat.Plugin.nothingxxx.Main
+api-version: '1.21'
+description: Nothing 系列插件 - [功能描述]
+author: GrayCat Studio
+website: https://github.com/GrayCatStudio
+load: STARTUP                         # 核心插件使用
+loadbefore: [Other, Plugins]          # 核心插件使用
+depend: [NothingSidebar]              # 硬依賴（需要側邊欄功能）
+softdepend: [NothingSidebar, NothingEconomy]  # 軟依賴（功能增強）
+
+commands:
+  [指令名]:
+    description: [指令描述]
+    usage: /<command> [參數說明]
+    aliases: [別名1, 別名2]
+    permission: nothing.[插件名].[權限]
+
+permissions:
+  nothing.[插件名].*:
+    description: 所有 [插件名] 權限
+    default: op
+    children:
+      nothing.[插件名].admin: true
+      nothing.[插件名].user: true
+```
+
+### config.yml 標準格式
+
+```yaml
+# Nothing[插件名] 配置檔案
+# 版本: ${project.version}
+# 作者: GrayCat Studio
+
+config-version: "1.0.0"
+
+# ====== 基本設定 ======
+settings:
+  enabled: true
+  debug: false
+  language: zh_TW
+
+# ====== 功能設定 ======
+features:
+  auto-save: true
+  save-interval: 300  # 秒
+
+# ====== 資料庫設定 ======
+database:
+  type: sqlite        # sqlite, mysql, h2
+  file: data.db
+  host: localhost
+  port: 3306
+  name: database
+  username: user
+  password: pass
+
+# ====== 整合設定 ======
+integration:
+  sidebar: true
+  economy: true
+  permissions: true
+
+# ====== 訊息設定 ======
+messages:
+  prefix: "§6[NothingXXX] "
+  no-permission: "§c您沒有權限執行此指令！"
+  plugin-reload: "§a插件已重新載入！"
+```
+
+## 版本控制規範
+
+### Maven pom.xml 版本格式
+
+```xml
+<version>1.0.0-SNAPSHOT-1</version>
+```
+
+版本號格式說明：
+- `1.0.0`：主版本號
+- `SNAPSHOT`：開發版本標識
+- `1`：SNAPSHOT 遞增編號
+
+### 版本更新規則
+
+1. **功能開發**：遞增 SNAPSHOT 編號
+2. **Bug 修復**：遞增 SNAPSHOT 編號  
+3. **API 變更**：遞增修訂版本號(Patch Version)，重置 SNAPSHOT 編號為 1
+4. **重大更新**：遞增次版本號(Minor Version)，重置修訂版本號和 SNAPSHOT 編號為 1
+5. **正式上架**：在API變更或重大更新後，如確定這是一個穩定的版本，移除SNAPSHOT編號
+
+## 資料夾用途說明
+
+### `/api/` 目錄
+
+- 所有對外提供的 API 介面
+- API 實作類別（如需要）
+- API 使用範例和文件
+
+### `/managers/` 目錄
+
+- **ConfigManager**：配置檔案管理
+- **DataManager**：資料庫和檔案資料管理
+- **[功能]Manager**：特定功能的業務邏輯管理
+
+### `/listeners/` 目錄
+
+- **PlayerListener**：玩家相關事件（加入、離開等）
+- **[功能]Listener**：特定功能的事件監聽
+
+### `/commands/` 目錄
+
+- 所有指令處理器
+- 實作 `CommandExecutor` 和 `TabCompleter`
+
+### `/models/` 目錄
+
+- 資料實體類別
+- 業務邏輯資料結構
+
+### `/guis/` 目錄
+
+- 所有 GUI 介面實作
+- 庫存介面、選單介面等
+
+### `/utils/` 目錄
+
+- 通用工具類別
+- 顏色處理、訊息處理、格式化等
+
+### `/tasks/` 目錄
+
+- 定時任務和異步任務
+- 資料自動儲存、定期更新等
+
+---
+
+> **注意事項**
+> 
+> 1. 所有檔案和資料夾名稱使用英文
+> 2. 類別名稱使用 PascalCase（大駝峰）
+> 3. 方法和變數名稱使用 camelCase（小駝峰）
+> 4. 常數使用 UPPER_CASE（全大寫+底線）
+> 5. 包名使用全小寫
+> 6. 檔案編碼統一使用 UTF-8 
